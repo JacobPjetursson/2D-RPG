@@ -40,7 +40,7 @@ public class World1State extends GameState {
 		
 		// spawn enemies
 		populateEnemies();
-		/*
+		/* Adding the hud lel kek PogChamp LUL
 		hud = new HUD(player);
 		
 		JukeBox.load("/Music/MainLevel.wav", "mainlevel");
