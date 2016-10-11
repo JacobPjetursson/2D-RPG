@@ -29,6 +29,7 @@ public class Player extends Entity {
 	
 	// fighting
 	private boolean basicattacking;
+	private boolean bowattacking;
 	private boolean hit;
 	// animations
 	private ArrayList<BufferedImage[]> sprites;
