@@ -2,15 +2,12 @@ package entity.enemies;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Line2D;
-import java.util.ArrayList;
 
 import entity.Entity;
 import entity.Player;
 import tileMap.TileMap;
 
 public abstract class Enemy extends Entity {
-	protected int attackRange;
 	protected Player player;
 	public Enemy(TileMap tm, Player p) {
 		super(tm);
@@ -34,7 +31,7 @@ public abstract class Enemy extends Entity {
 	}
 	
 	public void draw(Graphics2D g) {
-		g.drawImage(animation.getImage(), (int)(x+xmap - width / 2), (int) (y+ymap-height/2)-40, null);
+		g.drawImage(animation.getImage(), (int)(x+xmap - imgWidth / 2), (int) (y+ymap-imgHeight/2)-40, null);
 		displayMissingHealth(g);
 	}
 	
@@ -44,17 +41,13 @@ public abstract class Enemy extends Entity {
 		direction = Math.atan2(deltaY, deltaX);
 
 		if (Math.abs(direction) <= Math.PI / 4) {
-			east = true;
-			west = south = north = false;
+			cState = east;
 		} else if (Math.abs(direction) > Math.PI * 3 / 4) {
-			west = true;
-			south = north = east = false;
+			cState = west;
 		} else if (direction > Math.PI / 4 && direction <= Math.PI * 3 / 4) {
-			south = true;
-			west = north = east = false;
+			cState = south;
 		} else {
-			north = true;
-			east = south = west = false;
+			cState = north;
 		}
 	}
 	public void moveEnemy() {
@@ -64,16 +57,8 @@ public abstract class Enemy extends Entity {
 		y+=dy;
 			
 	}	
-	public void setWalking(int x, int y) {
-		if(!inAttackRange(player) && !attacking) {
-		getDirectionToCoords(x,y);
-		moveEnemy();
-		moving = true;
-		}
-		else {
-			moving = false;
-		}
-	}
+	public abstract void setWalking(int x, int y);
+	
 	public boolean inAttackRange(Entity e) {
 		int ex = e.getx();
 		int ey = e.gety();

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import entity.enemies.Enemy;
+import entity.objects.Arrow;
 import handlers.Keys;
 import handlers.MouseEvents;
 import tileMap.TileMap;
@@ -18,67 +19,75 @@ public class Player extends Entity {
 	// private int mana;
 	// private int maxMana;
 	// private int level;
-
+	
 	// movement
+	// mouse coords (not updated constantly)
 	private int mouseX;
 	private int mouseY;
+	// Collision detectors, to prevent walking into enemies
 	private boolean bottomSide;
 	private boolean topSide;
 	private boolean leftSide;
 	private boolean rightSide;
 	
 	// fighting
-	private boolean basicattacking;
-	private boolean bowattacking;
-	private boolean hit;
+	private boolean hitEnemy;
+	private int cEquip;
+	private ArrayList<Arrow> arrows;
 	// animations
 	private ArrayList<BufferedImage[]> sprites;
-	private final int[] numFrames = { 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 6, 6, 6, 6, 13, 13, 13, 13, 6 };
-	// animation actions
-	private static final int SPELL_NORTH = 0;
-	private static final int SPELL_WEST = 1;
-	private static final int SPELL_SOUTH = 2;
-	private static final int SPELL_EAST = 3;
-	private static final int THRUST_NORTH = 4;
-	private static final int THRUST_WEST = 5;
-	private static final int THRUST_SOUTH = 6;
-	private static final int THRUST_EAST = 7;
-	private static final int WALK_NORTH = 8;
-	private static final int WALK_WEST = 9;
-	private static final int WALK_SOUTH = 10;
-	private static final int WALK_EAST = 11;
-	private static final int ATTACK_NORTH = 12;
-	private static final int ATTACK_WEST = 13;
-	private static final int ATTACK_SOUTH = 14;
-	private static final int ATTACK_EAST = 15;
-	private static final int BOW_NORTH = 16;
-	private static final int BOW_WEST = 17;
-	private static final int BOW_SOUTH = 18;
-	private static final int BOW_EAST = 19;
-	private static final int KNOCKUP = 20;
+	// # of frames per animation
+	private final int[] numFrames = { 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 6, 6, 6, 6, 11, 11, 11, 11, 6 };
+	
+	// ACTIONS
+	int SPELL = 0;
+	int THRUST = 1;
+	int WALK = 2;
+	int ATTACK = 3;
+	int BOW = 4;
+	int KNOCKUP_SOUTH = 5;
+	// 6 actions as columns, 4 states as rows
+	// If I wanted to change the order of the numbers, i would have to change
+	// the spritesheet or the row/column order. This will do
+	
+	// EQUIPS
+	int E_MELEE = 0;
+	int E_BOW = 1;
 
 	public Player(TileMap tm) {
 		super(tm);
-
+		fsMachine = new int[][] { { 0, 4, 8, 12, 16, -1 }, { 1, 5, 9, 13, 17, -1 }, { 2, 6, 10, 14, 18, 20 },
+				{ 3, 7, 11, 15, 19, -1 } };
+				
+		cAction = WALK;
+		cState = south;
+		cEquip = E_BOW;
 		width = 120;
 		height = 120;
 		cwidth = 80;
 		cheight = 80;
 		walkingcWidth = 55;
 		walkingcHeight = 40;
-		south = true;
 		moveSpeed = 2.4;
 		health = maxHealth = 5;
 
+		attackRange = 50;
+		attackWidth = 20;
+		arrows = new ArrayList<Arrow>();
 		// load sprites
+		// TODO - Make it so bow/arrow is supported, for example
 		try {
 			BufferedImage spritesheet = ImageIO
-					.read(getClass().getResourceAsStream("/Sprites_Player/player_nothing.gif"));
+					.read(getClass().getResourceAsStream("/Sprites_Player/player_bow.gif"));
 			sprites = new ArrayList<BufferedImage[]>();
-			for (int i = 0; i < 20; i++) {
+			int imgsinWidth = 13;
+			int imgsinHeight = 21;
+			imgHeight = spritesheet.getHeight()/imgsinHeight;
+			imgWidth = spritesheet.getWidth()/imgsinWidth;
+			for (int i = 0; i < numFrames.length; i++) {
 				BufferedImage[] bi = new BufferedImage[numFrames[i]];
 				for (int j = 0; j < numFrames[i]; j++) {
-					bi[j] = spritesheet.getSubimage(j * width, i * height, width, height);
+					bi[j] = spritesheet.getSubimage(j * imgWidth, i * imgHeight, imgWidth, imgHeight);
 				}
 				sprites.add(bi);
 			}
@@ -86,8 +95,7 @@ public class Player extends Entity {
 			e.printStackTrace();
 		}
 		animation = new Animation();
-		currentAction = WALK_SOUTH;
-		animation.setFrames(sprites.get(WALK_SOUTH));
+		animation.setFrames(sprites.get(fsMachine[cState][cAction]));
 		animation.setDelay(100);
 		/*
 		 * JukeBox.load("/SFX/jump.wav", "jump");
@@ -99,59 +107,69 @@ public class Player extends Entity {
 	// BELOW IS FUNCTIONS USED IN UPDATE
 	public void checkAttackAndCollision(ArrayList<Enemy> enemies) {
 		leftSide = rightSide = topSide = bottomSide = false;
-		Line2D.Double left = new Line2D.Double(x - walkingcWidth / 2, y - walkingcHeight / 2 + 5, x - walkingcWidth / 2, y + walkingcHeight / 2 - 5);
-		Line2D.Double right = new Line2D.Double(x + walkingcWidth / 2, y - walkingcHeight / 2 + 5, x + walkingcWidth / 2, y + walkingcHeight / 2 - 5);
-		Line2D.Double top = new Line2D.Double(x - walkingcWidth / 2 + 5, y - walkingcHeight / 2, x + walkingcWidth / 2 - 5, y - walkingcHeight / 2);
-		Line2D.Double bottom = new Line2D.Double(x - walkingcWidth / 2 + 5, y + walkingcHeight / 2, x + walkingcWidth / 2 - 5, y + walkingcHeight / 2);
+		Line2D.Double left = new Line2D.Double(x - walkingcWidth / 2, y - walkingcHeight / 2 + 5, x - walkingcWidth / 2,
+				y + walkingcHeight / 2 - 5);
+		Line2D.Double right = new Line2D.Double(x + walkingcWidth / 2, y - walkingcHeight / 2 + 5,
+				x + walkingcWidth / 2, y + walkingcHeight / 2 - 5);
+		Line2D.Double top = new Line2D.Double(x - walkingcWidth / 2 + 5, y - walkingcHeight / 2,
+				x + walkingcWidth / 2 - 5, y - walkingcHeight / 2);
+		Line2D.Double bottom = new Line2D.Double(x - walkingcWidth / 2 + 5, y + walkingcHeight / 2,
+				x + walkingcWidth / 2 - 5, y + walkingcHeight / 2);
 
-		
-		for(int i = 0; i < enemies.size(); i++) {
+		for (int i = 0; i < enemies.size(); i++) {
 			Enemy e = enemies.get(i);
-			if(walkingIntersects(e)) {
+			if (walkingIntersects(e)) {
 				getDirectionToCoords(mouseX, mouseY);
-				if(e.getWalkingRectangle().intersectsLine(bottom)) {
+				if (e.getWalkingRectangle().intersectsLine(bottom)) {
 					bottomSide = true;
 				}
-				else if(e.getWalkingRectangle().intersectsLine(top)) {
+				if (e.getWalkingRectangle().intersectsLine(top)) {
 					topSide = true;
 				}
-				else if(e.getWalkingRectangle().intersectsLine(left)) {
+				if (e.getWalkingRectangle().intersectsLine(left)) {
 					leftSide = true;
 				}
-				else if(e.getWalkingRectangle().intersectsLine(right)) {
+				if (e.getWalkingRectangle().intersectsLine(right)) {
 					rightSide = true;
 				}
 			}
-			if(basicattacking && !hit) {
-					Line2D.Double basicattackLeft = new Line2D.Double(x+20*Math.sin(direction),(y-20*Math.cos(direction)),
-							x+45*Math.cos(direction)+20*Math.sin(direction), y+45*Math.sin(direction)-20*Math.cos(direction));
-					
-					Line2D.Double basicattackRight = new Line2D.Double(x-20*Math.sin(direction),(y+20*Math.cos(direction)),
-							x+45*Math.cos(direction)-20*Math.sin(direction), y+45*Math.sin(direction)+20*Math.cos(direction));
-					
-					Line2D.Double basicattackTop = new Line2D.Double(x+45*Math.cos(direction)+20*Math.sin(direction), y+45*Math.sin(direction)-20*Math.cos(direction),
-							x+45*Math.cos(direction)-20*Math.sin(direction), y+45*Math.sin(direction)+20*Math.cos(direction));
-					
-					if(e.getWalkingRectangle().intersectsLine(basicattackLeft) || e.getWalkingRectangle().intersectsLine(basicattackRight) ||
-							e.getWalkingRectangle().intersectsLine(basicattackTop)) {
-						e.hit(2);
-						hit = true;
-					}
+			if (attacking && !hitEnemy) {
+				// Bottom is not needed, since it
+				Line2D.Double meleeAttackLeft = new Line2D.Double(x + attackWidth * Math.sin(direction),
+						(y - attackWidth * Math.cos(direction)),
+						x + attackRange * Math.cos(direction) + attackWidth * Math.sin(direction),
+						y + attackRange * Math.sin(direction) - attackWidth * Math.cos(direction));
+
+				Line2D.Double meleeAttackRight = new Line2D.Double(x - attackWidth * Math.sin(direction),
+						(y + attackWidth * Math.cos(direction)),
+						x + attackRange * Math.cos(direction) - attackWidth * Math.sin(direction),
+						y + attackRange * Math.sin(direction) + attackWidth * Math.cos(direction));
+
+				Line2D.Double meleeAttackTop = new Line2D.Double(
+						x + attackRange * Math.cos(direction) + attackWidth * Math.sin(direction),
+						y + attackRange * Math.sin(direction) - attackWidth * Math.cos(direction),
+						x + attackRange * Math.cos(direction) - attackWidth * Math.sin(direction),
+						y + attackRange * Math.sin(direction) + attackWidth * Math.cos(direction));
+
+				if (e.getWalkingRectangle().intersectsLine(meleeAttackLeft)
+						|| e.getWalkingRectangle().intersectsLine(meleeAttackRight)
+						|| e.getWalkingRectangle().intersectsLine(meleeAttackTop)) {
+					e.hit(2);
+					hitEnemy = true;
+				}
 			}
-		}	
+		}
 	}
-	
-	// TODO - Make a function to define all the possible ways of attacking into 1 single variable: "attacking"
-	
+
 	// Moves the player after the mouseclick
 	private void movePlayer() {
-		if((!leftSide ||  Math.abs(direction) < Math.PI/2) && (!rightSide || Math.abs(direction) > Math.PI/2)) {
+		if ((!leftSide || Math.abs(direction) < Math.PI / 2) && (!rightSide || Math.abs(direction) > Math.PI / 2)) {
 			dx = (moveSpeed * Math.cos(direction));
-			x+=dx;
+			x += dx;
 		}
-		if((!topSide ||  direction > 0) && (!bottomSide || direction < 0)) {
-			dy = (moveSpeed * Math.sin(direction));	
-			y+=dy;
+		if ((!topSide || direction > 0) && (!bottomSide || direction < 0)) {
+			dy = (moveSpeed * Math.sin(direction));
+			y += dy;
 		}
 	}
 
@@ -169,114 +187,76 @@ public class Player extends Entity {
 		direction = Math.atan2(deltaY, deltaX);
 
 		if (Math.abs(direction) <= Math.PI / 4) {
-			east = true;
-			west = south = north = false;
+			cState = east;
 		} else if (Math.abs(direction) > Math.PI * 3 / 4) {
-			west = true;
-			south = north = east = false;
+			cState = west;
 		} else if (direction > Math.PI / 4 && direction <= Math.PI * 3 / 4) {
-			south = true;
-			west = north = east = false;
+			cState = south;
 		} else {
-			north = true;
-			east = south = west = false;
+			cState = north;
 		}
 	}
 
 	public void handleInput() {
-		// move to mouse
+		// move to mouse. Don't wanna move if i'm attacking.
 		if ((MouseEvents.isPressed(MouseEvents.LEFTCLICK) && !Keys.keyState[Keys.SHIFT]) && !attacking) {
-			getDirectionToCoords((int)(MouseEvents.mouseX - xmap),(int) (MouseEvents.mouseY - ymap));
+			getDirectionToCoords((int) (MouseEvents.mouseX - xmap), (int) (MouseEvents.mouseY - ymap));
 			if (!closeToMouse()) {
+				// TODO - constantly update moving and attacking, so that if one
+				// if false, the other is true, etc.)
 				moving = true;
 			}
 		}
-		if(Keys.keyState[Keys.SHIFT] && MouseEvents.isPressed(MouseEvents.LEFTCLICK) && !attacking){
-			getDirectionToCoords((int)(MouseEvents.mouseX - xmap),(int) (MouseEvents.mouseY - ymap));	
-			attacking = basicattacking = true;
-			hit = false;
-			moving = false;
+		// Dont wanna attack if im already attacking
+		if (Keys.keyState[Keys.SHIFT] && MouseEvents.isPressed(MouseEvents.LEFTCLICK) && !attacking) {
+			getDirectionToCoords((int) (MouseEvents.mouseX - xmap), (int) (MouseEvents.mouseY - ymap));
+			attacking = true;
+			if(cEquip == E_BOW) {
+				arrows.add(new Arrow(tileMap, (int)x, (int)y, direction));
+			}
 		}
 
 	}
+
 	// Set the animations according to the current action performed
 	public void setAnimation() {
-		// SOUTH ANIMATIONS
-		 if (south) {
-			if (basicattacking) {
-				if (currentAction != ATTACK_SOUTH) {
-					currentAction = ATTACK_SOUTH;
-					animation.setFrames(sprites.get(ATTACK_SOUTH));
-					animation.setDelay(100);
-				}
+		if (!(sprites.get(fsMachine[pState][pAction]) == sprites.get(fsMachine[cState][cAction]))) {
+			animation.setFrames(sprites.get(fsMachine[cState][cAction]));
+			if(cAction == BOW) {
+				animation.setDelay(70);
 			}
-			else {
-				if(currentAction != WALK_SOUTH) {
-					currentAction = WALK_SOUTH;
-					animation.setFrames(sprites.get(WALK_SOUTH));
-					animation.setDelay(100);		
-				}
-			}
+			pState = cState;
+			pAction = cAction;
 		}
-		// WEST ANIMATIONS
-		 else if (west) {
-				if (basicattacking) {
-					if (currentAction != ATTACK_WEST) {
-						currentAction = ATTACK_WEST;
-						animation.setFrames(sprites.get(ATTACK_WEST));
-						animation.setDelay(100);
-					}
+
+	}
+
+	private void setState() {
+		if (!moving && !attacking) {
+			idle = true;
+		} else {
+			idle = false;
+
+			if (attacking) {
+				if(cEquip == E_BOW) {
+					cAction = BOW;
 				}
-				else {
-					if(currentAction != WALK_WEST) {
-						currentAction = WALK_WEST;
-						animation.setFrames(sprites.get(WALK_WEST));
-						animation.setDelay(100);		
-					}
+				else if(cEquip == E_MELEE) {
+					cAction = ATTACK;	
 				}
-			}
-		// EAST ANIMATIONS
-		else if (east) {
-			if (basicattacking) {
-				if (currentAction != ATTACK_EAST) {
-					currentAction = ATTACK_EAST;
-					animation.setFrames(sprites.get(ATTACK_EAST));
-					animation.setDelay(100);
-				}
-			}
-			else {
-				if(currentAction != WALK_EAST) {
-					currentAction = WALK_EAST;
-					animation.setFrames(sprites.get(WALK_EAST));
-					animation.setDelay(100);		
-				}
-			}
-		}
-		// NORTH ANIMATIONS
-		else if (north) {
-			if (basicattacking) {
-				if (currentAction != ATTACK_NORTH) {
-					currentAction = ATTACK_NORTH;
-					animation.setFrames(sprites.get(ATTACK_NORTH));
-					animation.setDelay(100);
-				}
-			}
-			else {
-				if(currentAction != WALK_NORTH) {
-					currentAction = WALK_NORTH;
-					animation.setFrames(sprites.get(WALK_NORTH));
-					animation.setDelay(100);		
-				}
+				moving = false;
+			} else if (moving) {
+				cAction = WALK;
+				attacking = false;
 			}
 		}
 	}
-	private boolean idle() {
-		return !moving && !attacking;
-	}
+
 	public void update() {
 		handleInput();
-		//checkTileMapCollision();
+		// checkTileMapCollision();
 		setAnimation();
+		setState();
 		// update player position
 		if (moving) {
 			movePlayer();
@@ -285,24 +265,34 @@ public class Player extends Entity {
 			}
 		}
 		// check attack has stopped
-		if (attacking) {
-			if(animation.hasPlayedOnce()) {
-				attacking = basicattacking = false;
-				setAnimation();
+		if (animation.hasPlayedOnce()) {
+			animation.setFrames(sprites.get(fsMachine[cState][cAction]));
+			attacking = false;
+			hitEnemy = false;
+		}
+
+		if (!idle) {
+			animation.update();
+		}
+		System.out.println(arrows.size());
+		// UPDATE ARROWS
+		// TODO - when spells arrive, make list of MapObjects instead,
+		for(Arrow a : arrows) {
+			if(a.notOnScreen()) {
+				arrows.remove(a);
 			}
 		}
-		// TODO - get an idle animation! Temp fix: only update when not standing still
-		if(!idle()) {
-			animation.update();	
-		}
 	}
+
 	@Override
 	public void draw(Graphics2D g) {
 		setMapPosition();
 		super.draw(g);
 		
-	}
-	public void setBasicAttacking(boolean b) {
-		basicattacking = b;
+		// DRAW ARROWS
+		for(Arrow a : arrows) {
+			a.draw(g);
+		}
+
 	}
 }

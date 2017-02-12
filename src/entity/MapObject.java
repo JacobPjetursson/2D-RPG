@@ -7,7 +7,9 @@ import main.GamePanel;
 import tileMap.TileMap;
 
 public abstract class MapObject {
-	
+	//Size
+	protected int width;
+	protected int height;
 	// tile stuff
 	protected TileMap tileMap;
 	protected int tileSize;
@@ -21,8 +23,8 @@ public abstract class MapObject {
 	protected double dy;
 	
 	//dimensions
-	protected int width;
-	protected int height;
+	protected int imgWidth;
+	protected int imgHeight;
 	
 	// collison box
 	protected int cwidth;
@@ -38,8 +40,6 @@ public abstract class MapObject {
 	
 	// animation
 	protected Animation animation;
-	protected int currentAction;
-	protected int previousAction;
 	
 	//constructor
 	public MapObject(TileMap tm) {
@@ -121,8 +121,8 @@ public abstract class MapObject {
 	}
 	public int getx() {return (int)x; }
 	public int gety() {return (int)y; }
-	public int getWidth() {return width; }
-	public int getHeight() {return height; }
+	public int getWidth() {return imgWidth; }
+	public int getHeight() {return imgHeight; }
 	public int getCWidth() {return cwidth; }
 	public int getCHeight() {return cheight; }
 	
@@ -139,6 +139,6 @@ public abstract class MapObject {
 	}
 	
 	public void draw(Graphics2D g) {
-		g.drawImage(animation.getImage(), (int)(x+xmap - width / 2), (int) (y+ymap-height/2), null);
+		g.drawImage(animation.getImage(), (int)(x+xmap - imgWidth / 2), (int) (y+ymap-imgHeight/2), null);
 	}
 }

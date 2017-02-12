@@ -39,6 +39,7 @@ public class World1State extends GameState {
 		player.setPosition(100,100);
 		
 		// spawn enemies
+		enemies = new ArrayList<Enemy>();
 		populateEnemies();
 		/* Adding the hud lel kek PogChamp LUL
 		hud = new HUD(player);
@@ -48,7 +49,6 @@ public class World1State extends GameState {
 		*/
 	}
 	private void populateEnemies() {
-		enemies = new ArrayList<Enemy>();
 		Orc o;
 		Point[] points = new Point[] {
 				new Point(500,500),
@@ -105,7 +105,6 @@ public class World1State extends GameState {
 	public void draw(Graphics2D g) {
 		// draw tilemap
 		tileMap.draw(g);
-		
 		// draw enemies
 		for(int i = 0; i < enemies.size(); i++) {
 			enemies.get(i).draw(g);
@@ -118,6 +117,7 @@ public class World1State extends GameState {
 				enemies.get(i).draw(g);
 			}	
 		}
+	
 		// draw hud
 		//hud.draw(g);
 		
