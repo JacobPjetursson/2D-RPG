@@ -31,7 +31,7 @@ public abstract class Enemy extends Entity {
 	}
 	
 	public void draw(Graphics2D g) {
-		g.drawImage(animation.getImage(), (int)(x+xmap - imgWidth / 2), (int) (y+ymap-imgHeight/2)-40, null);
+		super.draw(g);
 		displayMissingHealth(g);
 	}
 	

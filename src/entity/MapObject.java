@@ -137,7 +137,9 @@ public abstract class MapObject {
 			x + xmap > GamePanel.WIDTH ||
 			y + ymap - 10 > GamePanel.HEIGHT;
 	}
-	
+	public void update() {
+		
+	}
 	public void draw(Graphics2D g) {
 		g.drawImage(animation.getImage(), (int)(x+xmap - imgWidth / 2), (int) (y+ymap-imgHeight/2), null);
 	}

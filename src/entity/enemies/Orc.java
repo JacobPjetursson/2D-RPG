@@ -156,6 +156,7 @@ public class Orc extends Enemy {
 	public void draw(Graphics2D g) {
 		setMapPosition();
 		super.draw(g);
+		
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package entity;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
@@ -34,10 +35,11 @@ public class Player extends Entity {
 	private boolean hitEnemy;
 	private int cEquip;
 	private ArrayList<Arrow> arrows;
+	private boolean arrowReloading;
 	// animations
 	private ArrayList<BufferedImage[]> sprites;
 	// # of frames per animation
-	private final int[] numFrames = { 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 6, 6, 6, 6, 11, 11, 11, 11, 6 };
+	private final int[] numFrames = { 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 6, 6, 6, 6, 9, 9, 9, 9, 6 };
 	
 	// ACTIONS
 	int SPELL = 0;
@@ -58,10 +60,9 @@ public class Player extends Entity {
 		super(tm);
 		fsMachine = new int[][] { { 0, 4, 8, 12, 16, -1 }, { 1, 5, 9, 13, 17, -1 }, { 2, 6, 10, 14, 18, 20 },
 				{ 3, 7, 11, 15, 19, -1 } };
-				
 		cAction = WALK;
 		cState = south;
-		cEquip = E_BOW;
+		cEquip = E_MELEE;
 		width = 120;
 		height = 120;
 		cwidth = 80;
@@ -75,10 +76,21 @@ public class Player extends Entity {
 		attackWidth = 20;
 		arrows = new ArrayList<Arrow>();
 		// load sprites
-		// TODO - Make it so bow/arrow is supported, for example
+		// TODO - Changing sprites results in lag, since you are changing something very essential to the game which is called a lot.
+		// Maybe make a load function that preloads all sprites
+		setSprites("/Sprites_Player/player_nothing.gif");
+		animation = new Animation();
+		animation.setFrames(sprites.get(fsMachine[cState][cAction]));
+		animation.setDelay(100);
+		/*
+		 * JukeBox.load("/SFX/jump.wav", "jump");
+		 * JukeBox.load("/SFX/fireball.wav", "fireball");
+		 * JukeBox.load("/SFX/scratch.wav", "scratch");
+		 */
+	}
+	private void setSprites(String s) {
 		try {
-			BufferedImage spritesheet = ImageIO
-					.read(getClass().getResourceAsStream("/Sprites_Player/player_bow.gif"));
+			BufferedImage spritesheet = ImageIO.read(getClass().getResourceAsStream(s));
 			sprites = new ArrayList<BufferedImage[]>();
 			int imgsinWidth = 13;
 			int imgsinHeight = 21;
@@ -94,16 +106,7 @@ public class Player extends Entity {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		animation = new Animation();
-		animation.setFrames(sprites.get(fsMachine[cState][cAction]));
-		animation.setDelay(100);
-		/*
-		 * JukeBox.load("/SFX/jump.wav", "jump");
-		 * JukeBox.load("/SFX/fireball.wav", "fireball");
-		 * JukeBox.load("/SFX/scratch.wav", "scratch");
-		 */
 	}
-
 	// BELOW IS FUNCTIONS USED IN UPDATE
 	public void checkAttackAndCollision(ArrayList<Enemy> enemies) {
 		leftSide = rightSide = topSide = bottomSide = false;
@@ -119,7 +122,6 @@ public class Player extends Entity {
 		for (int i = 0; i < enemies.size(); i++) {
 			Enemy e = enemies.get(i);
 			if (walkingIntersects(e)) {
-				getDirectionToCoords(mouseX, mouseY);
 				if (e.getWalkingRectangle().intersectsLine(bottom)) {
 					bottomSide = true;
 				}
@@ -133,8 +135,23 @@ public class Player extends Entity {
 					rightSide = true;
 				}
 			}
-			if (attacking && !hitEnemy) {
-				// Bottom is not needed, since it
+			
+			//arrow collision
+			// TODO - Arrow collision is bonkers right now, partly due to arrow hitbox, and partly due to orc hitbox.
+			// cHeight and cWidth gives a square around the entity, but with wrong starting points
+			for(int j = 0; j < arrows.size(); j++) {
+				Arrow a = arrows.get(j);
+				if(e.intersects(a)) {
+					e.hit(2);
+					hitEnemy = true;
+					arrows.remove(j);
+					j--;
+				}
+				
+			}
+			// meleeAttack
+			if (attacking && cEquip == E_MELEE && !hitEnemy) {
+				// Bottom is not needed, since the other sides always hit if bottom does, unless enemy is small enough to fit in box
 				Line2D.Double meleeAttackLeft = new Line2D.Double(x + attackWidth * Math.sin(direction),
 						(y - attackWidth * Math.cos(direction)),
 						x + attackRange * Math.cos(direction) + attackWidth * Math.sin(direction),
@@ -159,6 +176,7 @@ public class Player extends Entity {
 				}
 			}
 		}
+		
 	}
 
 	// Moves the player after the mouseclick
@@ -171,6 +189,7 @@ public class Player extends Entity {
 			dy = (moveSpeed * Math.sin(direction));
 			y += dy;
 		}
+		
 	}
 
 	// Determines if the player is close to the mouse (30 pixes)
@@ -180,8 +199,8 @@ public class Player extends Entity {
 
 	// Determines player direction to mouse
 	private void getDirectionToCoords(int mouseX, int mouseY) {
-		this.mouseX = mouseX;
-		this.mouseY = mouseY;
+		this.mouseX = (int)(mouseX-xmap);
+		this.mouseY = (int)(mouseY-ymap);
 		float deltaX = (float) (this.mouseX - this.x);
 		float deltaY = (float) (this.mouseY - this.y);
 		direction = Math.atan2(deltaY, deltaX);
@@ -200,22 +219,30 @@ public class Player extends Entity {
 	public void handleInput() {
 		// move to mouse. Don't wanna move if i'm attacking.
 		if ((MouseEvents.isPressed(MouseEvents.LEFTCLICK) && !Keys.keyState[Keys.SHIFT]) && !attacking) {
-			getDirectionToCoords((int) (MouseEvents.mouseX - xmap), (int) (MouseEvents.mouseY - ymap));
+			getDirectionToCoords((int) (MouseEvents.mouseX), (int) (MouseEvents.mouseY));
 			if (!closeToMouse()) {
-				// TODO - constantly update moving and attacking, so that if one
-				// if false, the other is true, etc.)
 				moving = true;
 			}
 		}
 		// Dont wanna attack if im already attacking
 		if (Keys.keyState[Keys.SHIFT] && MouseEvents.isPressed(MouseEvents.LEFTCLICK) && !attacking) {
-			getDirectionToCoords((int) (MouseEvents.mouseX - xmap), (int) (MouseEvents.mouseY - ymap));
+			getDirectionToCoords((int) (MouseEvents.mouseX), (int) (MouseEvents.mouseY));
 			attacking = true;
-			if(cEquip == E_BOW) {
-				arrows.add(new Arrow(tileMap, (int)x, (int)y, direction));
+			
+		}
+		if(Keys.isPressed(Keys.MELEE)) {
+			if(cEquip != E_MELEE) {
+				cEquip = E_MELEE;
+				setSprites("/Sprites_Player/player_nothing.gif");
+			}
+			
+		}
+		if(Keys.isPressed(Keys.BOW)) {
+			if(cEquip != E_BOW) {
+				cEquip = E_BOW;
+				setSprites("/Sprites_Player/player_bow.gif");
 			}
 		}
-
 	}
 
 	// Set the animations according to the current action performed
@@ -224,6 +251,9 @@ public class Player extends Entity {
 			animation.setFrames(sprites.get(fsMachine[cState][cAction]));
 			if(cAction == BOW) {
 				animation.setDelay(70);
+			}
+			else {
+				animation.setDelay(100);
 			}
 			pState = cState;
 			pAction = cAction;
@@ -240,6 +270,7 @@ public class Player extends Entity {
 			if (attacking) {
 				if(cEquip == E_BOW) {
 					cAction = BOW;
+					arrowReloading = true;
 				}
 				else if(cEquip == E_MELEE) {
 					cAction = ATTACK;	
@@ -269,17 +300,25 @@ public class Player extends Entity {
 			animation.setFrames(sprites.get(fsMachine[cState][cAction]));
 			attacking = false;
 			hitEnemy = false;
+			// only shoot arrow when animation is complete
+			if(cEquip == E_BOW && arrowReloading) {
+				Arrow a = new Arrow(tileMap, (int)(x), (int)(y),(int) (mouseX), (int)(mouseY));
+				arrows.add(a);
+				arrowReloading = false;
+			}
 		}
 
 		if (!idle) {
 			animation.update();
 		}
-		System.out.println(arrows.size());
 		// UPDATE ARROWS
 		// TODO - when spells arrive, make list of MapObjects instead,
-		for(Arrow a : arrows) {
+		for(int i = 0; i < arrows.size(); i++) {
+			Arrow a = arrows.get(i);
+			a.update();
 			if(a.notOnScreen()) {
 				arrows.remove(a);
+				i--;
 			}
 		}
 	}
@@ -293,6 +332,5 @@ public class Player extends Entity {
 		for(Arrow a : arrows) {
 			a.draw(g);
 		}
-
 	}
 }

@@ -5,7 +5,7 @@ import java.awt.event.KeyEvent;
 //for the 9 keys that are used for this game.
 //a key k is down when keyState[k] is true.
 public class Keys {
-public static final int NUM_KEYS = 11;
+public static final int NUM_KEYS = 13;
 	
 	public static boolean keyState[] = new boolean[NUM_KEYS];
 	public static boolean prevKeyState[] = new boolean[NUM_KEYS];
@@ -21,7 +21,9 @@ public static final int NUM_KEYS = 11;
 	public static int BAGPACK = 7;
 	public static int ESCAPE = 8;
 	public static int SHIFT = 9;
-	public static int KEYPRESSED = 10;
+	public static int MELEE = 10;
+	public static int BOW = 11;
+	public static int KEYPRESSED = 12;
 	
 	
 	public static void keySet(int i, boolean b) {
@@ -35,6 +37,8 @@ public static final int NUM_KEYS = 11;
 		else if(i == KeyEvent.VK_B) keyState[BAGPACK] = b;
 		else if(i == KeyEvent.VK_ESCAPE) keyState[ESCAPE] = b;
 		else if(i == KeyEvent.VK_SHIFT) keyState[SHIFT] = b;
+		else if(i == KeyEvent.VK_1) keyState[MELEE] = b;
+		else if(i == KeyEvent.VK_2) keyState[BOW] = b;
 		else if(i == KeyEvent.KEY_PRESSED) keyState[KEYPRESSED] = b;
 	}
 	
