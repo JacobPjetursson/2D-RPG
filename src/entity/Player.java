@@ -1,7 +1,7 @@
 package entity;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -65,8 +65,8 @@ public class Player extends Entity {
 		cEquip = E_MELEE;
 		width = 120;
 		height = 120;
-		cwidth = 80;
-		cheight = 80;
+		cwidth = 60;
+		cheight = 100;
 		walkingcWidth = 55;
 		walkingcHeight = 40;
 		moveSpeed = 2.4;
@@ -76,8 +76,7 @@ public class Player extends Entity {
 		attackWidth = 20;
 		arrows = new ArrayList<Arrow>();
 		// load sprites
-		// TODO - Changing sprites results in lag, since you are changing something very essential to the game which is called a lot.
-		// Maybe make a load function that preloads all sprites
+		// TODO - Preload all sprites and only set newly added ones?
 		setSprites("/Sprites_Player/player_nothing.gif");
 		animation = new Animation();
 		animation.setFrames(sprites.get(fsMachine[cState][cAction]));
@@ -106,6 +105,10 @@ public class Player extends Entity {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	@Override
+	public Rectangle getRectangle() {
+		return new Rectangle((int)x - cwidth/2, (int)y-cheight/2-30, cwidth, cheight);
 	}
 	// BELOW IS FUNCTIONS USED IN UPDATE
 	public void checkAttackAndCollision(ArrayList<Enemy> enemies) {

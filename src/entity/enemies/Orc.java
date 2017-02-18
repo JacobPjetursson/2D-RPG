@@ -1,6 +1,7 @@
 package entity.enemies;
 
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -36,8 +37,8 @@ public class Orc extends Enemy {
 
 		width = 120;
 		height = 120;
-		cwidth = 80;
-		cheight = 80;
+		cwidth = 60;
+		cheight = 90;
 		walkingcWidth = 55;
 		walkingcHeight = 40;
 		moveSpeed = 1.8;
@@ -73,7 +74,10 @@ public class Orc extends Enemy {
 		 * JukeBox.load("/SFX/scratch.wav", "scratch");
 		 */
 	}
-
+	@Override
+	public Rectangle getRectangle() {
+		return new Rectangle((int)x - cwidth/2, (int)y-cheight/2-25, cwidth, cheight);
+	}
 	private void checkAttack() {
 		if (inAttackRange(player) && !attacking) {
 			attacking = true;

@@ -7,7 +7,7 @@ import main.GamePanel;
 import tileMap.TileMap;
 
 public abstract class MapObject {
-	//Size
+	//Size of image/sprite
 	protected int width;
 	protected int height;
 	// tile stuff

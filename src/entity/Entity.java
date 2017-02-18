@@ -47,6 +47,12 @@ public abstract class Entity extends MapObject {
 	public Rectangle getWalkingRectangle() {
 		return new Rectangle((int)x - walkingcWidth/2, (int)y-walkingcHeight/2, walkingcWidth, walkingcHeight);
 	}
+	/*
+ 	@Override
+	public Rectangle getRectangle() {
+		return new Rectangle((int)x - cwidth/2, (int)y-cheight/2, cwidth, cheight);
+	}
+	*/
 	public void hit(int damage) {
 		health -= damage;
 		if (health < 0)
@@ -71,6 +77,8 @@ public abstract class Entity extends MapObject {
 	}
 	public void draw(Graphics2D g) {
 		g.drawImage(animation.getImage(), (int)(x+xmap - width / 2), (int) (y+ymap-height/2)-40, width, height, null);
+		
+		g.draw(getRectangle());
 	}
 	
 
