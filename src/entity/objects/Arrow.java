@@ -64,7 +64,7 @@ public class Arrow extends MapObject {
 
 	public void draw(Graphics2D g) {
 		
-		g.draw(cRect);
+		//g.draw(cRect);
 		g.drawImage(img, trans, null);
 
 	}

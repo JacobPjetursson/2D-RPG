@@ -78,7 +78,7 @@ public abstract class Entity extends MapObject {
 	public void draw(Graphics2D g) {
 		g.drawImage(animation.getImage(), (int)(x+xmap - width / 2), (int) (y+ymap-height/2)-40, width, height, null);
 		
-		g.draw(getRectangle());
+		//g.draw(getRectangle());
 	}
 	
 
