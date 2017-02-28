@@ -44,11 +44,11 @@ public class TileMap {
 	int[][] mapOnScreen;
 	
 	public TileMap(String tileSet, String mapName) {
-		tileSize = 60;
 		loadMap(mapName);
+		numColsToDraw = GamePanel.WIDTH / tileSize + 2; // 34
+		numRowsToDraw = GamePanel.HEIGHT / tileSize + 2; // 20
 		loadTiles(tileSet);
-		numColsToDraw = GamePanel.WIDTH / tileSize + 2;
-		numRowsToDraw = GamePanel.HEIGHT / tileSize + 2;
+		tileSize = 60;
 		mapOnScreen = new int[numRowsToDraw*2][numColsToDraw*2];
 
 	}

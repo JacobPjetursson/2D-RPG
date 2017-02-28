@@ -330,7 +330,7 @@ public class Player extends Entity {
 	public void draw(Graphics2D g) {
 		setMapPosition();
 		super.draw(g);
-		
+		System.out.println(MouseEvents.mouseX + "  " + MouseEvents.mouseY);
 		// DRAW ARROWS
 		for(Arrow a : arrows) {
 			a.draw(g);
