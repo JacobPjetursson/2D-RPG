@@ -41,7 +41,7 @@ public class Orc extends Enemy {
 		cheight = 90;
 		walkingcWidth = 55;
 		walkingcHeight = 40;
-		moveSpeed = 1.8;
+		moveSpeed = 3;
 		health = maxHealth = 5;
 
 		attackRange = 50;

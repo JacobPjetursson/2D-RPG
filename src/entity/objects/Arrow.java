@@ -26,7 +26,7 @@ public class Arrow extends MapObject {
 		setMapPosition();
 		cwidth = 6;
 		cheight = 6;
-		speed = 5;
+		speed = 10;
 		scale = 2.0;
 		yOffSet = 40;
 		try {

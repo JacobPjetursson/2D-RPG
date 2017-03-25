@@ -69,7 +69,7 @@ public class Player extends Entity {
 		cheight = 100;
 		walkingcWidth = 55;
 		walkingcHeight = 40;
-		moveSpeed = 2.4;
+		moveSpeed = 4;
 		health = maxHealth = 5;
 
 		attackRange = 50;

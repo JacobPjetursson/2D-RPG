@@ -52,7 +52,7 @@ public class World1State extends GameState {
 		Orc o;
 		Point[] points = new Point[] {
 				new Point(500,500),
-				//new Point(600, 500),
+				new Point(600, 500),
 				//new Point(500, 300),
 				//new Point(500,700),
 				new Point(1000,1000),
@@ -83,7 +83,7 @@ public class World1State extends GameState {
 	public void update() {
 		// update player
 		player.update();
-		tileMap.setPosition(GamePanel.WIDTH / 2 - player.getx(), GamePanel.HEIGHT / 2 - player.gety());
+		tileMap.setPosition((GamePanel.WIDTH / 2) - player.getx(), GamePanel.HEIGHT / 2 - player.gety());
 		// Find path from all enemies to player
 		findPathfromEnemiesToPlayer();
 		// attack enemies
